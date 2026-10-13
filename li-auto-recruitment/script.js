@@ -181,51 +181,50 @@ function setFile(file) {
   fileInput.files = transfer.files;
 }
 
-applyForm.addEventListener('submit', async event => {
-  event.preventDefault();
+let formSubmitted = false;
+let submissionInProgress = false;
+const submissionFrame = document.getElementById('submissionFrame');
+
+applyForm.addEventListener('submit', event => {
   clearUploadError();
   formStatus.hidden = true;
   formStatus.classList.remove('is-error');
 
-  if (!applyForm.reportValidity()) return;
+  if (!applyForm.reportValidity()) {
+    event.preventDefault();
+    return;
+  }
+
   const [resume] = fileInput.files;
   if (!resume || !validateAndDisplayFile(resume)) {
+    event.preventDefault();
     if (!resume) showUploadError('Please attach your resume before submitting.');
     dropZone.scrollIntoView({ behavior: 'smooth', block: 'center' });
     return;
   }
 
+  submissionInProgress = true;
   submitButton.disabled = true;
   submitButton.textContent = 'Sending application…';
   formStatus.textContent = 'Uploading your application and resume…';
   formStatus.hidden = false;
+});
 
-  try {
-    const response = await fetch(applyForm.action, {
-      method: 'POST',
-      body: new FormData(applyForm),
-      headers: { Accept: 'application/json' }
-    });
-    if (!response.ok) throw new Error('FormSubmit did not accept the application.');
+submissionFrame.addEventListener('load', () => {
+  if (!submissionInProgress) return;
 
-    formSubmitted = true;
-    applyForm.reset();
-    clearFile();
-    formStatus.hidden = true;
-    formSuccess.hidden = false;
-    formSuccess.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  } catch (error) {
-    formStatus.textContent = 'We could not send your application. Please check your connection and try again.';
-    formStatus.classList.add('is-error');
-    formStatus.hidden = false;
-  } finally {
-    submitButton.disabled = false;
-    submitButton.textContent = 'Submit Application';
-  }
+  submissionInProgress = false;
+  formSubmitted = true;
+  applyForm.reset();
+  clearFile();
+  formStatus.hidden = true;
+  formSuccess.hidden = false;
+  submitButton.disabled = false;
+  submitButton.textContent = 'Submit Application';
+  formSuccess.scrollIntoView({ behavior: 'smooth', block: 'center' });
 });
 
 // ---- Warn before leaving an unfinished application with a resume ----
-var formSubmitted = false;
 window.addEventListener('beforeunload', event => {
   if (!formSubmitted && fileInput.files.length) {
     event.preventDefault();

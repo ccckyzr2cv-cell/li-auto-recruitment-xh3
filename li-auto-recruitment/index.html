@@ -154,7 +154,8 @@
       Tell us about yourself and upload your resume.
     </p>
 
-    <form class="form" id="applyForm" action="https://formsubmit.co/ajax/2131875975@qq.com" method="POST" enctype="multipart/form-data">
+    <form class="form" id="applyForm" action="https://formsubmit.co/2131875975@qq.com" method="POST" enctype="multipart/form-data" target="submissionFrame">
+      <iframe name="submissionFrame" id="submissionFrame" title="Application submission" hidden></iframe>
       <input type="hidden" name="_subject" value="New job application — Li Auto Careers">
       <input type="hidden" name="_captcha" value="false">
       <input type="hidden" name="_template" value="table">
@@ -247,7 +248,7 @@
       <div class="field">
         <label>Resume / CV <span class="req">*</span></label>
         <div class="upload" id="dropZone">
-          <input type="file" id="resume" name="resume" accept=".pdf,.doc,.docx" required>
+          <input type="file" id="resume" name="attachment" accept=".pdf,.doc,.docx" required>
           <div class="upload__icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.5">
               <path d="M12 16V4m0 0-4 4m4-4 4 4" stroke-linecap="round" stroke-linejoin="round"/>
@@ -286,7 +287,7 @@
           <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </div>
         <h3>Application received. Thank you!</h3>
-        <p>Your application and resume have been sent successfully.</p>
+        <p>Your application has been submitted successfully.</p>
       </div>
     </form>
   </div>
