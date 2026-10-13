@@ -74,115 +74,161 @@ filters.addEventListener('click', (e) => {
   });
 });
 
+// ---- Full job-description disclosures ----
+document.querySelectorAll('.job__details').forEach(details => {
+  const summary = details.querySelector('.job__details-summary');
+  details.addEventListener('toggle', () => {
+    summary.textContent = details.open ? 'Show less' : 'View full job description';
+  });
+});
+
 // ---- "Apply for this role" → prefill role + scroll to form ----
 document.querySelectorAll('.job__link').forEach(link => {
   link.addEventListener('click', () => {
     const role = link.dataset.role;
     const sel = document.getElementById('role');
-    [...sel.options].forEach(o => { if (o.text.replace(/\s+/g, ' ') === role) sel.value = o.text; });
+    [...sel.options].forEach(o => { if (o.text.replace(/\s+/g, ' ') === role.replace(/\s+/g, ' ')) sel.value = o.value; });
     document.getElementById('apply').scrollIntoView({ behavior: 'smooth' });
   });
 });
 
-// ---- Resume upload: drag & drop + file chip ----
-const dropZone  = document.getElementById('dropZone');
+// ---- Resume upload: drag & drop + submission ----
+const applyForm = document.getElementById('applyForm');
+const dropZone = document.getElementById('dropZone');
 const fileInput = document.getElementById('resume');
-const fileChip  = document.getElementById('fileChip');
-const fileName  = document.getElementById('fileName');
+const fileChip = document.getElementById('fileChip');
+const fileName = document.getElementById('fileName');
 const removeBtn = document.getElementById('removeFile');
-const MAX_SIZE  = 10 * 1024 * 1024; // 10 MB
+const uploadError = document.getElementById('uploadError');
+const submitButton = document.getElementById('submitApplication');
+const formStatus = document.getElementById('formStatus');
+const formSuccess = document.getElementById('formSuccess');
+const MAX_SIZE = 10 * 1024 * 1024;
+const ALLOWED_EXTENSIONS = ['pdf', 'doc', 'docx'];
 
-['dragover', 'dragenter'].forEach(ev =>
-  dropZone.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.add('drag'); })
+['dragover', 'dragenter'].forEach(eventName =>
+  dropZone.addEventListener(eventName, event => {
+    event.preventDefault();
+    dropZone.classList.add('drag');
+  })
 );
-['dragleave', 'drop'].forEach(ev =>
-  dropZone.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.remove('drag'); })
+['dragleave', 'drop'].forEach(eventName =>
+  dropZone.addEventListener(eventName, event => {
+    event.preventDefault();
+    dropZone.classList.remove('drag');
+  })
 );
-dropZone.addEventListener('drop', e => {
-  if (e.dataTransfer.files.length) setFile(e.dataTransfer.files[0]);
+dropZone.addEventListener('drop', event => {
+  const [file] = event.dataTransfer.files;
+  if (file) setFile(file);
 });
 fileInput.addEventListener('change', () => {
-  if (fileInput.files.length) setFile(fileInput.files[0]);
+  const [file] = fileInput.files;
+  if (file) validateAndDisplayFile(file);
 });
-removeBtn.addEventListener('click', (e) => {
-  e.preventDefault();
-  e.stopPropagation();
-  fileInput.value = '';
-  fileChip.hidden = true;
+removeBtn.addEventListener('click', event => {
+  event.preventDefault();
+  event.stopPropagation();
+  clearFile();
 });
-function setFile(file) {
-  if (file.size > MAX_SIZE) {
-    alert('File is too large. Please upload a resume under 10 MB.');
-    fileInput.value = '';
-    return;
-  }
-  fileName.textContent = file.name + `  (${(file.size / 1024 / 1024).toFixed(1)} MB)`;
-  fileChip.hidden = false;
+
+function getFileExtension(file) {
+  return file.name.split('.').pop().toLowerCase();
 }
 
-// ---- Form submit (demo: no backend) ----
-const form = document.getElementById('applyForm');
-const success = document.getElementById('formSuccess');
-form.addEventListener('submit', (e) => {
-  e.preventDefault();
-  if (!form.checkValidity()) {
-    form.reportValidity();
+function showUploadError(message) {
+  uploadError.textContent = message;
+  uploadError.hidden = false;
+  dropZone.classList.add('has-error');
+}
+
+function clearUploadError() {
+  uploadError.hidden = true;
+  uploadError.textContent = '';
+  dropZone.classList.remove('has-error');
+}
+
+function clearFile() {
+  fileInput.value = '';
+  fileChip.hidden = true;
+  fileName.textContent = '';
+  clearUploadError();
+}
+
+function validateAndDisplayFile(file) {
+  const extension = getFileExtension(file);
+  if (!ALLOWED_EXTENSIONS.includes(extension)) {
+    clearFile();
+    showUploadError('Please upload a PDF, DOC, or DOCX resume.');
+    return false;
+  }
+  if (file.size > MAX_SIZE) {
+    clearFile();
+    showUploadError('File is too large. Please upload a resume under 10 MB.');
+    return false;
+  }
+  clearUploadError();
+  fileName.textContent = `${file.name} (${(file.size / 1024 / 1024).toFixed(1)} MB)`;
+  fileChip.hidden = false;
+  return true;
+}
+
+function setFile(file) {
+  if (!validateAndDisplayFile(file)) return;
+
+  const transfer = new DataTransfer();
+  transfer.items.add(file);
+  fileInput.files = transfer.files;
+}
+
+applyForm.addEventListener('submit', async event => {
+  event.preventDefault();
+  clearUploadError();
+  formStatus.hidden = true;
+  formStatus.classList.remove('is-error');
+
+  if (!applyForm.reportValidity()) return;
+  const [resume] = fileInput.files;
+  if (!resume || !validateAndDisplayFile(resume)) {
+    if (!resume) showUploadError('Please attach your resume before submitting.');
+    dropZone.scrollIntoView({ behavior: 'smooth', block: 'center' });
     return;
   }
-  if (!fileInput.files.length) {
-    alert('Please upload your resume before submitting.');
-    return;
+
+  submitButton.disabled = true;
+  submitButton.textContent = 'Sending application…';
+  formStatus.textContent = 'Uploading your application and resume…';
+  formStatus.hidden = false;
+
+  try {
+    const response = await fetch(applyForm.action, {
+      method: 'POST',
+      body: new FormData(applyForm),
+      headers: { Accept: 'application/json' }
+    });
+    if (!response.ok) throw new Error('FormSubmit did not accept the application.');
+
+    formSubmitted = true;
+    applyForm.reset();
+    clearFile();
+    formStatus.hidden = true;
+    formSuccess.hidden = false;
+    formSuccess.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  } catch (error) {
+    formStatus.textContent = 'We could not send your application. Please check your connection and try again.';
+    formStatus.classList.add('is-error');
+    formStatus.hidden = false;
+  } finally {
+    submitButton.disabled = false;
+    submitButton.textContent = 'Submit Application';
   }
+});
 
-  // 自动填充申请人的邮箱到 _replyto
-  const emailInput = document.getElementById('email');
-  if (emailInput && emailInput.value) {
-    document.getElementById('replyto').value = emailInput.value;
-    document.getElementById('fromEmail').value = emailInput.value;
+// ---- Warn before leaving an unfinished application with a resume ----
+var formSubmitted = false;
+window.addEventListener('beforeunload', event => {
+  if (!formSubmitted && fileInput.files.length) {
+    event.preventDefault();
+    event.returnValue = 'You have not completed your application. Are you sure you want to leave?';
   }
-
-  // 自动填充申请人姓名
-  const nameInput = document.getElementById('fullName');
-  if (nameInput && nameInput.value) {
-    document.getElementById('fromName').value = nameInput.value;
-  }
-
-  // 显示提交中状态
-  const submitBtn = form.querySelector('button[type="submit"]');
-  const originalText = submitBtn.textContent;
-  submitBtn.textContent = 'Submitting...';
-  submitBtn.disabled = true;
-
-  // 收集数据并发送
-  const formData = new FormData(form);
-
-  // 使用 fetch 发送到 formsubmit.co
-  fetch(form.action, {
-    method: 'POST',
-    body: formData,
-    headers: {
-      'Accept': 'application/json'
-    }
-  })
-  .then(response => {
-    if (response.ok) {
-      // 成功 - 显示感谢页面
-      submitBtn.textContent = originalText;
-      submitBtn.disabled = false;
-      form.hidden = true;
-      success.hidden = false;
-      // 平滑滚动到成功消息
-      success.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-      console.log('Application submitted successfully!');
-    } else {
-      throw new Error('Submission failed: ' + response.status);
-    }
-  })
-  .catch(error => {
-    console.error('Error:', error);
-    alert('Submission encountered an error. Please check that:\n\n1. You have network connection\n2. Your resume is under 10 MB\n3. All required fields are filled\n\nTry again or contact admin@liauto.com');
-    submitBtn.textContent = originalText;
-    submitBtn.disabled = false;
-  });
 });
