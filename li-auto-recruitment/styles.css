@@ -71,16 +71,16 @@ img, svg { display: block; }
   justify-content: space-between;
 }
 
-.nav__brand { display: flex; align-items: center; gap: 10px; }
+.nav__brand { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
 .logo { color: var(--ink); }
-.nav__brand .logo { width: 56px; height: 56px; object-fit: contain; }
+.nav__brand .logo { display: block; width: clamp(140px, 18vw, 188px); height: auto; object-fit: contain; }
 .nav__name { font-size: 17px; font-weight: 600; letter-spacing: -0.02em; }
 .nav__name em { font-style: normal; color: var(--gray-2); font-weight: 500; }
 
 .nav__links {
   display: flex;
   align-items: center;
-  gap: 34px;
+  gap: clamp(14px, 2.5vw, 34px);
   list-style: none;
 }
 .nav__dropdown { position: relative; }
