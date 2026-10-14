@@ -102,8 +102,7 @@ const removeBtn = document.getElementById('removeFile');
 const uploadError = document.getElementById('uploadError');
 const submitButton = document.getElementById('submitApplication');
 const formStatus = document.getElementById('formStatus');
-const formSuccess = document.getElementById('formSuccess');
-const MAX_SIZE = 10 * 1024 * 1024;
+const MAX_SIZE = 10_000_000;
 const ALLOWED_EXTENSIONS = ['pdf', 'doc', 'docx'];
 
 ['dragover', 'dragenter'].forEach(eventName =>
@@ -162,13 +161,18 @@ function validateAndDisplayFile(file) {
     showUploadError('Please upload a PDF, DOC, or DOCX resume.');
     return false;
   }
+  if (file.size === 0) {
+    clearFile();
+    showUploadError('This file is empty. Please upload your resume again.');
+    return false;
+  }
   if (file.size > MAX_SIZE) {
     clearFile();
-    showUploadError('File is too large. Please upload a resume under 10 MB.');
+    showUploadError('File is too large. Please upload a resume no larger than 10 MB.');
     return false;
   }
   clearUploadError();
-  fileName.textContent = `${file.name} (${(file.size / 1024 / 1024).toFixed(1)} MB)`;
+  fileName.textContent = `${file.name} (${(file.size / 1_000_000).toFixed(1)} MB)`;
   fileChip.hidden = false;
   return true;
 }
@@ -181,11 +185,22 @@ function setFile(file) {
   fileInput.files = transfer.files;
 }
 
-let formSubmitted = false;
 let submissionInProgress = false;
-const submissionFrame = document.getElementById('submissionFrame');
 
+function restoreSubmissionState() {
+  submissionInProgress = false;
+  submitButton.disabled = false;
+  submitButton.textContent = 'Submit Application';
+  formStatus.hidden = true;
+}
+
+// Keep the native multipart POST so FormSubmit receives the file bytes.
 applyForm.addEventListener('submit', event => {
+  if (submissionInProgress) {
+    event.preventDefault();
+    return;
+  }
+
   clearUploadError();
   formStatus.hidden = true;
   formStatus.classList.remove('is-error');
@@ -205,28 +220,22 @@ applyForm.addEventListener('submit', event => {
 
   submissionInProgress = true;
   submitButton.disabled = true;
-  submitButton.textContent = 'Sending application…';
-  formStatus.textContent = 'Uploading your application and resume…';
+  submitButton.textContent = 'Continue to verification…';
+  formStatus.textContent = 'Uploading your application and resume. Complete verification on the next page to finish submitting.';
   formStatus.hidden = false;
 });
 
-submissionFrame.addEventListener('load', () => {
-  if (!submissionInProgress) return;
-
-  submissionInProgress = false;
-  formSubmitted = true;
-  applyForm.reset();
-  clearFile();
-  formStatus.hidden = true;
-  formSuccess.hidden = false;
-  submitButton.disabled = false;
-  submitButton.textContent = 'Submit Application';
-  formSuccess.scrollIntoView({ behavior: 'smooth', block: 'center' });
+// Browsers can restore a disabled button when returning from verification.
+window.addEventListener('pageshow', () => {
+  restoreSubmissionState();
+  const [resume] = fileInput.files;
+  if (resume) validateAndDisplayFile(resume);
+  else clearFile();
 });
 
 // ---- Warn before leaving an unfinished application with a resume ----
 window.addEventListener('beforeunload', event => {
-  if (!formSubmitted && fileInput.files.length) {
+  if (!submissionInProgress && fileInput.files.length) {
     event.preventDefault();
     event.returnValue = 'You have not completed your application. Are you sure you want to leave?';
   }
