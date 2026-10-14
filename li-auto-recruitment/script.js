@@ -102,7 +102,10 @@ const removeBtn = document.getElementById('removeFile');
 const uploadError = document.getElementById('uploadError');
 const submitButton = document.getElementById('submitApplication');
 const formStatus = document.getElementById('formStatus');
+const submissionFrame = document.getElementById('submissionFrame');
+const submissionNext = document.getElementById('submissionNext');
 const MAX_SIZE = 10_000_000;
+const SUBMISSION_TIMEOUT = 90_000;
 const ALLOWED_EXTENSIONS = ['pdf', 'doc', 'docx'];
 
 ['dragover', 'dragenter'].forEach(eventName =>
@@ -186,15 +189,18 @@ function setFile(file) {
 }
 
 let submissionInProgress = false;
+let submissionReceipt = null;
+let submissionTimer;
 
 function restoreSubmissionState() {
+  clearTimeout(submissionTimer);
   submissionInProgress = false;
+  submissionReceipt = null;
   submitButton.disabled = false;
   submitButton.textContent = 'Submit Application';
-  formStatus.hidden = true;
 }
 
-// Keep the native multipart POST so FormSubmit receives the file bytes.
+// Use the regular multipart endpoint: AJAX submissions can omit attachments.
 applyForm.addEventListener('submit', event => {
   if (submissionInProgress) {
     event.preventDefault();
@@ -218,16 +224,44 @@ applyForm.addEventListener('submit', event => {
     return;
   }
 
+  const receipt = Array.from(crypto.getRandomValues(new Uint8Array(16)), byte => byte.toString(16).padStart(2, '0')).join('');
+  const nextURL = new URL('thanks.html', window.location.href);
+  nextURL.searchParams.set('receipt', receipt);
+  submissionNext.value = nextURL.href;
+  submissionReceipt = receipt;
   submissionInProgress = true;
   submitButton.disabled = true;
-  submitButton.textContent = 'Continue to verification…';
-  formStatus.textContent = 'Uploading your application and resume. Complete verification on the next page to finish submitting.';
+  submitButton.textContent = 'Sending application…';
+  formStatus.textContent = 'Sending your details and resume together. Please keep this page open…';
   formStatus.hidden = false;
+
+  submissionTimer = setTimeout(() => {
+    restoreSubmissionState();
+    formStatus.textContent = 'We could not confirm submission. Your details and resume have been kept. The email may still arrive; check before retrying, or use the email address below.';
+    formStatus.classList.add('is-error');
+    formStatus.hidden = false;
+  }, SUBMISSION_TIMEOUT);
 });
 
-// Browsers can restore a disabled button when returning from verification.
-window.addEventListener('pageshow', () => {
+// An iframe load can be an error page; only accept our same-origin receipt.
+window.addEventListener('message', event => {
+  if (!submissionInProgress || event.origin !== window.location.origin || event.source !== submissionFrame.contentWindow) return;
+  if (event.data?.type !== 'application-submitted' || event.data.receipt !== submissionReceipt) return;
+
   restoreSubmissionState();
+  applyForm.reset();
+  clearFile();
+  if (referralDetails) referralDetails.style.display = 'none';
+  formStatus.classList.remove('is-error');
+  formStatus.textContent = 'Thank you! The email service accepted your application with your resume attached. Delivery to the recruiter’s inbox has not yet been confirmed.';
+  formStatus.hidden = false;
+  formStatus.scrollIntoView({ behavior: 'smooth', block: 'center' });
+});
+
+window.addEventListener('pageshow', event => {
+  if (!event.persisted) return;
+  restoreSubmissionState();
+  formStatus.hidden = true;
   const [resume] = fileInput.files;
   if (resume) validateAndDisplayFile(resume);
   else clearFile();
@@ -235,7 +269,7 @@ window.addEventListener('pageshow', () => {
 
 // ---- Warn before leaving an unfinished application with a resume ----
 window.addEventListener('beforeunload', event => {
-  if (!submissionInProgress && fileInput.files.length) {
+  if (fileInput.files.length) {
     event.preventDefault();
     event.returnValue = 'You have not completed your application. Are you sure you want to leave?';
   }

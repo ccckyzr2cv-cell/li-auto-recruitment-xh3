@@ -17,7 +17,7 @@
           <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </div>
         <h1 class="section__title section__title--light">Thank you for applying!</h1>
-        <p>If FormSubmit redirected you here after verification, your application has been submitted to our recruitment email service. This page does not confirm delivery to the recruiter’s inbox.</p>
+        <p>If FormSubmit redirected you here, your application has been submitted to our recruitment email service. This page does not confirm delivery to the recruiter’s inbox.</p>
         <p>If you encountered an error before reaching this page, please email <a class="upload__browse" href="mailto:2131875975@qq.com?subject=Li%20Auto%20job%20application">2131875975@qq.com</a> with your details, the position you’re applying for, and your resume attached.</p>
       </div>
       <div class="form__actions">
@@ -26,5 +26,11 @@
     </div>
   </div>
 </main>
+<script>
+const receipt = new URLSearchParams(window.location.search).get('receipt');
+if (window.parent !== window && /^[a-f0-9]{32}$/.test(receipt || '')) {
+  window.parent.postMessage({ type: 'application-submitted', receipt }, window.location.origin);
+}
+</script>
 </body>
 </html>
