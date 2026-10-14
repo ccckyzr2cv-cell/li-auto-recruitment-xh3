@@ -644,7 +644,8 @@ img, svg { display: block; }
 
 .form__actions { margin-top: 30px; display: flex; flex-direction: column; gap: 14px; align-items: flex-start; }
 .form__note, .form__status { font-size: 13px; color: #636366; }
-.form__status { color: #f0e2cd; }
+.form__status { font-size: 17px; font-weight: 700; line-height: 1.5; color: #f0e2cd; }
+.form__status.is-success { color: #6ee7a0; }
 .form__status.is-error { color: #ff8a8a; }
 .form__actions .btn[disabled] { cursor: wait; opacity: .65; }
 .form__honeypot { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }

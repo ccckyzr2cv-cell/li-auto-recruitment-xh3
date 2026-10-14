@@ -209,7 +209,7 @@ applyForm.addEventListener('submit', event => {
 
   clearUploadError();
   formStatus.hidden = true;
-  formStatus.classList.remove('is-error');
+  formStatus.classList.remove('is-error', 'is-success');
 
   if (!applyForm.reportValidity()) {
     event.preventDefault();
@@ -237,7 +237,7 @@ applyForm.addEventListener('submit', event => {
 
   submissionTimer = setTimeout(() => {
     restoreSubmissionState();
-    formStatus.textContent = 'We could not confirm submission. Your details and resume have been kept. The email may still arrive; check before retrying, or use the email address below.';
+    formStatus.textContent = '⚠ Submission not confirmed — please wait before retrying.';
     formStatus.classList.add('is-error');
     formStatus.hidden = false;
   }, SUBMISSION_TIMEOUT);
@@ -252,8 +252,9 @@ window.addEventListener('message', event => {
   applyForm.reset();
   clearFile();
   if (referralDetails) referralDetails.style.display = 'none';
-  formStatus.classList.remove('is-error');
-  formStatus.textContent = 'Thank you! The email service accepted your application with your resume attached. Delivery to the recruiter’s inbox has not yet been confirmed.';
+  formStatus.classList.remove('is-error', 'is-success');
+  formStatus.classList.add('is-success');
+  formStatus.textContent = '✓ Application and resume submitted successfully!';
   formStatus.hidden = false;
   formStatus.scrollIntoView({ behavior: 'smooth', block: 'center' });
 });
